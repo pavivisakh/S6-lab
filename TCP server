@@ -1,0 +1,60 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+
+#define PORT 12345
+#define BUFFER_SIZE 1024
+
+int main() {
+    int sockfd, newsockfd;
+    struct sockaddr_in serveraddr, clientaddr;
+    char buffer[BUFFER_SIZE];
+    socklen_t addrlen = sizeof(clientaddr);
+
+    // Create TCP socket
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd < 0) {
+        perror("Socket creation failed");
+        exit(EXIT_FAILURE);
+    }
+
+    // Configure server address
+    serveraddr.sin_family = AF_INET;
+    serveraddr.sin_port = htons(PORT);
+    serveraddr.sin_addr.s_addr = INADDR_ANY;
+
+    // Bind the socket to the address
+    if (bind(sockfd, (struct sockaddr*)&serveraddr, sizeof(serveraddr)) < 0) {
+        perror("Bind failed");
+        close(sockfd);
+        exit(EXIT_FAILURE);
+    }
+
+    // Start listening for incoming connections
+    if (listen(sockfd, 5) < 0) {
+        perror("Listen failed");
+        close(sockfd);
+        exit(EXIT_FAILURE);
+    }
+
+    printf("TCP Server is running on port %d\n", PORT);
+
+    // Accept a client connection
+    newsockfd = accept(sockfd, (struct sockaddr*)&clientaddr, &addrlen);
+    if (newsockfd < 0) {
+        perror("Accept failed");
+        close(sockfd);
+        exit(EXIT_FAILURE);
+    }
+
+    // Receive message from client
+    recv(newsockfd, buffer, BUFFER_SIZE, 0);
+    printf("Received message: %s\n", buffer);
+
+    // Close sockets
+    close(newsockfd);
+    close(sockfd);
+    return 0;
+}
